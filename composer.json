@@ -1,0 +1,10 @@
+{
+    "require": {
+        "smalot/pdfparser": "^2.11",
+        "cboden/ratchet": "^0.4.4",
+        "textalk/websocket": "^1.5",
+        "ramsey/uuid": "^4.8",
+        "react/event-loop": "^1.5"
+    }
+    
+}
