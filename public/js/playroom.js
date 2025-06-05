@@ -1,11 +1,8 @@
 // --- Global ---
 const userId = USER_ID;
 const userName = USER_NAME;
-let isReady = false;
 
 const roomId = urlParams.get("room") || urlParams.get("room_id") || "";
-const readyBtn = document.getElementById("readyBtn");
-const readyStatus = document.getElementById("ready-status");
 const ws = new WebSocket("ws://localhost:8080/socket");
 const scoreboardOverlay = document.getElementById("scoreboard-overlay");
 const scoreboardList = document.getElementById("scoreboard-list");
@@ -51,14 +48,7 @@ ws.onmessage = function (event) {
 
     case "gameStarted":
       console.log("Game started!");
-      // Reset trạng thái sẵn sàng
-      isReady = false;
-      if (readyBtn) {
-        readyBtn.textContent = "Sẵn sàng";
-        readyBtn.classList.remove("btn-success");
-        readyBtn.classList.add("btn-warning");
-        readyStatus.textContent = "";
-      }
+      
 
       nextBtn.style.display = "none";
       endBtn.style.display = "none";
@@ -160,64 +150,11 @@ ws.onmessage = function (event) {
         loadQuestion(data.question, data.timeLimit);
       }
       break;
-    case "updateReadyStatus":
-      console.log(
-        "Ready status update:",
-        data.readyUsers,
-        "/",
-        data.totalUsers
-      );
-
-      if (readyStatus) {
-        const startBtn = document.getElementById("startBtn");
-
-        if (IS_HOST) {
-          // Nếu là host
-          if (data.totalUsers === 0) {
-            startBtn.disabled = true;
-            readyStatus.textContent = "Chưa có người chơi nào trong phòng.";
-          } else if (data.readyUsers === data.totalUsers) {
-            startBtn.disabled = false;
-            readyStatus.textContent =
-              "Tất cả người chơi đã sẵn sàng. Bạn có thể bắt đầu!";
-          } else {
-            startBtn.disabled = true;
-            readyStatus.textContent = `${data.readyUsers}/${data.totalUsers} người chơi đã sẵn sàng...`;
-          }
-        } else {
-          // User thấy trạng thái
-          readyStatus.textContent = `${data.readyUsers}/${data.totalUsers} người chơi đã sẵn sàng...`;
-        }
-      } else {
-        console.warn("Không tìm thấy ready-status");
-      }
-
-      break;
-
     default:
       console.warn("Unknown action:", data.action);
       break;
   }
 };
-if (readyBtn) {
-  readyBtn.onclick = function () {
-    isReady = true;
-    ws.send(
-      JSON.stringify({
-        action: "playerReady",
-        room_id: roomId,
-        userId: userId,
-        userName: userName,
-      })
-    );
-
-    // Cập nhật giao diện ngay (UX)
-    readyBtn.disabled = true;
-    readyBtn.innerText = "Đã sẵn sàng";
-  };
-} else {
-  console.warn("Không tìm thấy nút readyBtn");
-}
 
 nextBtn.onclick = function () {
   console.log("Host clicked NEXT → sending nextQuestion...");
@@ -235,46 +172,33 @@ nextBtn.onclick = function () {
 };
 // --- UI helpers ---
 function updateUserList(userList, hostName) {
-  const userListElement = document.getElementById("userListTable");
-  userListElement.innerHTML = "";
+  const userListElement = document.getElementById('userList');
+  userListElement.innerHTML = '';
 
   // Tiêu đề 2 cột:
-  const header = document.createElement("li");
-  header.className = "list-group-item d-flex justify-content-between fw-bold";
+  const header = document.createElement('li');
+  header.className = 'list-group-item d-flex justify-content-between fw-bold';
   header.innerHTML = `
-        <span>Tên người chơi</span>
-        <span>Trạng thái</span>
-    `;
+      <span>Tên người chơi</span>
+      <span>Vai trò</span>
+  `;
   userListElement.appendChild(header);
 
-  userList.forEach((user) => {
-    const tr = document.createElement("tr");
+  userList.forEach(user => {
+      const li = document.createElement('li');
+      li.className = 'list-group-item d-flex justify-content-between';
 
-    const isHost = user.userName === hostName;
-    const isReady = user.ready || isHost; // ✅ Đúng key server gửi là 'ready'
+      const isHost = (user.userName === hostName);
 
-    tr.innerHTML = `
-            <td>${user.userName} ${isHost ? "(Chủ phòng)" : ""}</td>
-            <td class="${isReady ? "text-success" : "text-secondary"}">
-                ${isReady ? "Sẵn sàng" : "Chưa sẵn sàng"}
-            </td>
-        `;
-    userListElement.appendChild(tr);
+      li.innerHTML = `
+          <span>${user.userName}</span>
+          <span>${isHost ? 'Chủ phòng' : 'Người chơi'}</span>
+      `;
+      userListElement.appendChild(li);
   });
-  const readyBtn = document.getElementById("readyBtn");
-  if (readyBtn) {
-    if (USER_NAME === hostName) {
-      // Host → ẩn hoặc disable
-      // readyBtn.classList.add('d-none'); // nếu muốn ẩn
-      readyBtn.disabled = true;
-      readyBtn.innerText = "Bạn là chủ phòng";
-    } else {
-      readyBtn.disabled = false;
-      readyBtn.classList.remove("d-none");
-      readyBtn.innerText = isReady ? "Đã sẵn sàng" : "Sẵn sàng";
-    }
-  }
+
 }
+
 
 function showRoomView() {
   document.getElementById("roomView").style.display = "block";
@@ -346,7 +270,6 @@ document.getElementById("leaveBtn").onclick = function () {
   }
 };
 
-// --- Start Game ---
 if (typeof IS_HOST !== "undefined" && IS_HOST) {
   document.getElementById("startBtn").onclick = function () {
     ws.send(

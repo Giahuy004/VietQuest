@@ -288,43 +288,7 @@ if ($currentIndex + 1 >= $totalQuestions) {
     
     
         
-    protected function sendReadyStatusToRoom($room_id) {
-        if (!isset($this->rooms[$room_id])) return;
     
-        // Lấy host
-        require_once 'app/models/RoomModel.php';
-        $roomModel = new \App\Models\RoomModel($this->db);
-        $hostInfo = $roomModel->getHostInfo($room_id);
-        $host_id = $hostInfo['host_id'] ?? 0;
-    
-        // Đếm số user (KHÔNG TÍNH HOST)
-        $totalUsers = 0;
-        $readyUsers = 0;
-    
-        foreach ($this->rooms[$room_id] as $info) {
-            $uid = $info['userId'];
-            if ($uid == $host_id) continue; // Bỏ host
-    
-            $totalUsers++;
-            if (!empty($this->readyStates[$room_id][$uid])) {
-                $readyUsers++;
-            }
-        }
-    
-        // Gửi cho cả phòng
-        $message = json_encode([
-            'action' => 'updateReadyStatus',
-            'readyUsers' => $readyUsers,
-            'totalUsers' => $totalUsers,
-            'hostId' => $host_id
-        ]);
-    
-        foreach ($this->rooms[$room_id] as $info) {
-            $info['conn']->send($message);
-        }
-    
-        echo "[READY STATUS] Room {$room_id} → {$readyUsers}/{$totalUsers} user ready\n";
-    }
     
     // Khi nhận được tin nhắn từ client
     public function onMessage(ConnectionInterface $from, $msg) {
@@ -413,33 +377,10 @@ if ($currentIndex + 1 >= $totalQuestions) {
                         return;
                     }
                 
-                    // ✅ Kiểm tra ready
                     $totalUsers = 0;
-                    $readyUsers = 0;
-                
+
                     foreach ($this->rooms[$room_id] as $info) {
-                        $uid = $info['userId'];
-                        if ($uid == $host_id) continue; // Không tính host
                         $totalUsers++;
-                        if (!empty($this->readyStates[$room_id][$uid])) {
-                            $readyUsers++;
-                        }
-                    }
-                
-                    if ($totalUsers === 0) {
-                        $from->send(json_encode([
-                            'action' => 'error',
-                            'message' => 'Không có người chơi nào trong phòng.'
-                        ]));
-                        return;
-                    }
-                
-                    if ($readyUsers < $totalUsers) {
-                        $from->send(json_encode([
-                            'action' => 'error',
-                            'message' => "Chưa đủ người sẵn sàng ({$readyUsers}/{$totalUsers})."
-                        ]));
-                        return;
                     }
                 
                     // ✅ TỚI ĐÂY MỚI CHO START GAME
@@ -508,32 +449,6 @@ if ($currentIndex + 1 >= $totalQuestions) {
                 
                     break;
                 
-                    case 'playerReady':
-                        $room_id = $data['room_id'] ?? null;
-                        $userId = $data['userId'] ?? null;
-                    
-                        if (!$room_id || !$userId) {
-                            $from->send(json_encode([
-                                'action' => 'error',
-                                'message' => 'Thiếu dữ liệu playerReady.'
-                            ]));
-                            return;
-                        }
-                    
-                        if (!isset($this->readyStates[$room_id])) {
-                            $this->readyStates[$room_id] = [];
-                        }
-                    
-                        $this->readyStates[$room_id][$userId] = true; // Đánh dấu ready
-                    
-                        echo "[READY] User {$userId} đã sẵn sàng trong phòng {$room_id}\n";
-                    
-                        // Gửi cập nhật trạng thái ready cho cả room
-                        $this->sendReadyStatusToRoom($room_id);
-                        $this->sendUserListToRoom($room_id);
-                        break;
-                    
-                    
                     case 'joinGameSession':
                         $room_id = $data['room_id'] ?? null;
                         $session_id = $data['session_id'] ?? null;
@@ -747,7 +662,6 @@ if ($currentIndex + 1 >= $totalQuestions) {
             $userList[] = [
                 'userId' => $userId,
                 'userName' => $info['userName'],
-                'ready' => !empty($this->readyStates[$room_id][$userId]) // true/false
             ];
         }
     

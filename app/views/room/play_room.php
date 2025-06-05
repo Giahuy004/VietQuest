@@ -1,6 +1,7 @@
 <?php
 require 'app/views/layouts/header.php'; ?>
 <!-- Room View -->
+<!-- Room View -->
 <div id="roomView">
     <div class="container mt-5">
         <div class="card shadow-sm mx-auto" style="max-width: 600px;">
@@ -11,18 +12,8 @@ require 'app/views/layouts/header.php'; ?>
                 <p><strong>Chủ phòng:</strong> <span class="text-success"><?= htmlspecialchars($hostName) ?></span></p>
                 <p><strong>Số người tối đa:</strong> <span class="badge bg-info"><?= htmlspecialchars($maxPlayers) ?></span></p>
                 <h4 class="mt-4">Danh sách người chơi:</h4>
+                <ul id="userList" class="list-group mb-3"></ul>
 
-                <table class="table table-bordered table-striped">
-                    <thead class="table-dark">
-                        <tr>
-                            <th scope="col">Tên người chơi</th>
-                            <th scope="col">Trạng thái</th>
-                        </tr>
-                    </thead>
-                    <tbody id="userListTable">
-                        <!-- Sẽ được JS fill -->
-                    </tbody>
-                </table>
                 <div class="d-flex justify-content-between mt-4">
                     <?php if ($_SESSION['user_name'] === $hostName): ?>
                         <button id="startBtn" class="btn btn-success px-4">
@@ -32,14 +23,8 @@ require 'app/views/layouts/header.php'; ?>
                     <button id="leaveBtn" class="btn btn-outline-danger px-4">
                         <i class="bi bi-box-arrow-left"></i> Rời phòng
                     </button>
-                    <!-- Nút Sẵn sàng -->
-                    <button id="readyBtn" 
-                        class="btn btn-warning mt-3 <?php echo ($_SESSION['user_name'] === $hostName) ? 'd-none' : ''; ?>">
-                        Sẵn sàng
-                    </button>
-                    <p id="ready-status" class="mt-2 text-muted"></p>
-
                 </div>
+
             </div>
         </div>
     </div>
