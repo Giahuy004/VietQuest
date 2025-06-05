@@ -48,7 +48,7 @@ function initializeMap() {
   map = L.map("map", {
     zoomDelta: 5.0,
     zoomSnap: 0.1,
-  }).setView([21.026203, 105.83475], 6);
+  }).setView([21.026203, 105.83475], 5);
 
   L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
     attribution: "&copy; OpenStreetMap",

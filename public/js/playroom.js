@@ -1,7 +1,6 @@
 // --- Global ---
 const userId = USER_ID;
 const userName = USER_NAME;
-
 const roomId = urlParams.get("room") || urlParams.get("room_id") || "";
 const ws = new WebSocket("ws://localhost:8080/socket");
 const scoreboardOverlay = document.getElementById("scoreboard-overlay");
@@ -93,68 +92,181 @@ ws.onmessage = function (event) {
       console.log("Joined game session successfully.");
       break;
 
-    case "updateScoreboard":
-      console.log("Scoreboard update:", data.scoreboard);
+      case "updateScoreboard":
+    console.log("Scoreboard update:", data.scoreboard);
 
-      scoreboardList.innerHTML = "";
-
-      data.scoreboard.forEach((player) => {
+    // Cập nhật danh sách BXH (chưa show ngay)
+    scoreboardList.innerHTML = "";
+    data.scoreboard.forEach((player) => {
         const li = document.createElement("li");
-        li.textContent = `#${data.scoreboard.indexOf(player) + 1} - ${
-          player.userName
-        } - ${player.totalScore} pts`;
+        li.textContent = `#${data.scoreboard.indexOf(player) + 1} - ${player.userName} - ${player.totalScore} pts`;
         scoreboardList.appendChild(li);
-      });
+    });
 
-      // Hiện overlay
-      scoreboardOverlay.style.display = "flex";
+    // Lấy description từ câu hỏi hiện tại
+    const descriptionText = (questions && questions[currentQuestionIndex] && questions[currentQuestionIndex].description) || "Đây là mô tả địa điểm!";
 
-      // Kiểm tra có phải câu cuối không:
-      if (data.isLastQuestion) {
-        console.log(
-          "This is the last question - showing End + Play Again buttons."
-        );
+    // --- Flow: showResult → showDescription → showScoreboard ---
+    showResult(() => {
+        showDescription(descriptionText, () => {
+            // --- Giữ nguyên code show BXH ---
+            const overlayLayer = document.getElementById('overlay-layer');
+            const descOverlay = document.getElementById('description-overlay');
+            const scoreboardOverlay = document.getElementById('scoreboard-overlay');
 
-        // ❌ Ẩn nút tiếp tục
-        nextBtn.style.display = "none";
-        waitingText.style.display = "none";
+            overlayLayer.style.display = 'flex';
+            descOverlay.style.display = 'none';
+            scoreboardOverlay.style.display = 'block';
 
-        // ✅ Show Kết thúc + Chơi lại
-        endBtn.style.display = "inline-block";
-        playAgainBtn.style.display = "inline-block";
-      } else {
-        // Nếu chưa phải câu cuối → bình thường
-        if (data.isHost) {
-          nextBtn.style.display = "block";
-          waitingText.style.display = "none";
-        } else {
-          nextBtn.style.display = "none";
-          waitingText.style.display = "block";
-        }
+            // Kiểm tra có phải câu cuối không:
+            if (data.isLastQuestion) {
+                console.log("This is the last question - showing End + Play Again buttons.");
 
-        // Ẩn End + Play Again (để tránh lỗi nếu vừa chơi lại)
-        endBtn.style.display = "none";
-        playAgainBtn.style.display = "none";
-      }
+                nextBtn.style.display = "none";
+                waitingText.style.display = "none";
 
-      break;
+                endBtn.style.display = "inline-block";
+                playAgainBtn.style.display = "inline-block";
+            } else {
+                if (data.isHost) {
+                    nextBtn.style.display = "block";
+                    waitingText.style.display = "none";
+                } else {
+                    nextBtn.style.display = "none";
+                    waitingText.style.display = "block";
+                }
+
+                endBtn.style.display = "none";
+                playAgainBtn.style.display = "none";
+            }
+        });
+    });
+
+    break;
+
+    
 
     case "showQuestion":
       console.log("Show question:", data);
       // Ẩn overlay
       scoreboardOverlay.style.display = "none";
+      const overlayLayer = document.getElementById('overlay-layer');
+      if (overlayLayer) overlayLayer.style.display = 'none';
       questions = questions || [];
       currentQuestionIndex = data.questionIndex;
       questions[currentQuestionIndex] = data.question;
       if (typeof loadQuestion === "function") {
         loadQuestion(data.question, data.timeLimit);
-      }
+        startProgressBar(data.timeLimit);
+    }
       break;
     default:
       console.warn("Unknown action:", data.action);
       break;
   }
 };
+function calculateRealDistance(latlng1, latlng2) {
+  const R = 6371;
+  const toRad = (value) => value * Math.PI / 180;
+
+  const lat1 = toRad(latlng1.lat);
+  const lon1 = toRad(latlng1.lng);
+  const lat2 = toRad(latlng2.lat);
+  const lon2 = toRad(latlng2.lng);
+
+  const dLat = lat2 - lat1;
+  const dLon = lon2 - lon1;
+
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const distance = R * c;
+  return distance.toFixed(1);
+}
+function showResult(onFinishCallback) {
+  // Lấy dữ liệu câu hỏi hiện tại
+  const question = questions[currentQuestionIndex];
+  if (!question) {
+      console.warn("No question found for currentQuestionIndex:", currentQuestionIndex);
+      if (typeof onFinishCallback === 'function') {
+          onFinishCallback();
+      }
+      return;
+  }
+
+  // Tọa độ đích
+  const targetLatLng = [question.correct_lat, question.correct_lng];
+  const destinationIcon = L.icon({
+    iconUrl: '/VietQuest/public/images/marker/target.png',
+    iconSize: [40, 40],      // tùy chỉnh kích thước icon (VD: 40x40 px)
+    iconAnchor: [20, 40],    // điểm neo (trung tâm đáy)
+    popupAnchor: [0, -40]    // vị trí popup hiển thị
+  });
+
+  // Thêm marker đích
+  const targetMarker = L.marker(targetLatLng, { icon: destinationIcon }).addTo(map);
+
+  // Tọa độ người chơi chọn
+  const userLatLng = currentMarker?.getLatLng?.() ?? targetLatLng;
+
+  // Tính khoảng cách
+  const realDistance = calculateRealDistance(userLatLng, targetMarker.getLatLng());
+
+  // Xóa polyline cũ nếu có
+  if (typeof polyline !== 'undefined' && polyline) {
+      map.removeLayer(polyline);
+  }
+
+  // Vẽ line từ user → target
+  polyline = L.polyline([userLatLng, targetMarker.getLatLng()], {
+      color: 'black',
+      weight: 4,
+      opacity: 1,
+      dashArray: '10,15'
+  }).addTo(map);
+  polyline.bindPopup(realDistance + " km").openPopup();
+
+  // Zoom đến đích
+  map.flyTo(targetLatLng, 17, { duration: 2 });
+
+  // Khi zoom xong → gọi callback
+  map.once('moveend', function () {
+      if (typeof onFinishCallback === 'function') {
+          onFinishCallback();
+      }
+  });
+}
+
+function showDescription(descriptionText, onFinishCallback) {
+  const overlayLayer = document.getElementById('overlay-layer');
+  const descOverlay = document.getElementById('description-overlay');
+  const scoreboardOverlay = document.getElementById('scoreboard-overlay');
+
+  // Reset state
+  overlayLayer.style.display = 'flex';
+  descOverlay.style.display = 'block';
+  scoreboardOverlay.style.display = 'none';
+
+  document.getElementById('desc-text').textContent = descriptionText;
+
+  // Sau vài giây tự động chuyển sang BXH (VD: 4 giây)
+  setTimeout(() => {
+      if (typeof onFinishCallback === 'function') {
+          onFinishCallback();
+      }
+  }, 4000);
+}
+
+
+function showScoreboard() {
+    const overlayLayer = document.getElementById('overlay-layer');
+    const descOverlay = document.getElementById('description-overlay');
+    const scoreboardOverlay = document.getElementById('scoreboard-overlay');
+
+    overlayLayer.style.display = 'flex';
+    descOverlay.style.display = 'none';
+    scoreboardOverlay.style.display = 'block';
+}
 
 nextBtn.onclick = function () {
   console.log("Host clicked NEXT → sending nextQuestion...");
@@ -171,6 +283,40 @@ nextBtn.onclick = function () {
   scoreboardOverlay.style.display = "none";
 };
 // --- UI helpers ---
+
+function startProgressBar(durationSeconds) {
+  const progressBar = document.getElementById('question-progress-bar');
+  const countdownElement = document.getElementById('countdown-timer');
+
+  // Reset progress bar
+  progressBar.style.transition = 'none';
+  progressBar.style.width = '100%';
+
+  // Reset countdown
+  clearInterval(countdownInterval);
+  countdownElement.style.display = 'block';
+  countdownElement.textContent = durationSeconds;
+
+  // Bắt đầu animate progress
+  setTimeout(() => {
+      progressBar.style.transition = `width ${durationSeconds}s linear`;
+      progressBar.style.width = '0%';
+  }, 50);
+
+  // Bắt đầu countdown số giây
+  let timeLeft = durationSeconds;
+  countdownInterval = setInterval(() => {   // <-- KHÔNG có "let" ở đây !!!
+      timeLeft--;
+      if (timeLeft >= 0) {
+          countdownElement.textContent = timeLeft;
+      } else {
+          clearInterval(countdownInterval);
+          countdownElement.style.display = 'none';
+      }
+  }, 1000);
+}
+
+
 function updateUserList(userList, hostName) {
   const userListElement = document.getElementById('userList');
   userListElement.innerHTML = '';

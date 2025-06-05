@@ -49,6 +49,23 @@ require 'app/views/layouts/header.php'; ?>
         max-width: 400px;
     ">
         <img id="question-image" src="" alt="Question" style="width: 100%; border-radius: 5px;">
+                <!-- Progress bar -->
+        <div class="progress-bar-bg" style="
+            width: 100%;
+            height: 6px;
+            background-color: #ddd;
+            border-radius: 4px;
+            margin-top: 8px;
+            overflow: hidden;
+        ">
+            <div id="question-progress-bar" style="
+                height: 100%;
+                width: 100%;
+                background: linear-gradient(to right, #00cfff, #00e6a8, #ffe066, #ff9a8b, #c17fff);
+                transition: width linear;
+            "></div>
+        </div>
+
         <button id="submitBtn" class="btn btn-primary mt-2" style="width: 100%;">Submit</button>
     </div>
 
@@ -56,44 +73,62 @@ require 'app/views/layouts/header.php'; ?>
     <div id="countdown-timer" style="
         position: absolute;
         top: 20px;
-        right: 20px;
+        left: 50%;
+        transform: translateX(-50%);
         z-index: 1000;
-        font-size: 2rem;
+        font-size: 3rem;
+        font-weight: bold;
+        color: #fff;
         background: rgba(0,0,0,0.7);
-        color: white;
         padding: 10px 20px;
         border-radius: 10px;
-    "></div>
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        display: none;
+    ">0</div>
 
-<div id="scoreboard-overlay" style="
+<!-- Overlay dùng chung -->
+<div id="overlay-layer" style="
     display: none;
-    position: absolute; top: 0; left: 0;
+    position: absolute;
+    top: 0; left: 0;
     width: 100%; height: 100%;
-    background: rgba(0,0,0,0.8);
+    background: rgba(0,0,0,0.85);
     z-index: 2000;
     color: white;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    text-align: center;
+    padding: 20px;
 ">
-    <h2>Bảng xếp hạng</h2>
-    <ul id="scoreboard-list" style="list-style: none; padding: 0;"></ul>
 
-    <!-- Nút tiếp theo cho host -->
-    <button id="next-question-btn" style="margin-top: 20px; display: none;" class="btn btn-success">
-        Tiếp tục
-    </button>
+    <!-- Mô tả địa điểm -->
+    <div id="description-overlay" style="display: none; max-width: 700px;">
+        <h3>Mô tả địa điểm</h3>
+        <div id="desc-text"></div>
+    </div>
 
-    <!-- Text cho người chơi khác -->
-    <p id="waiting-host-text" style="margin-top: 20px; display: none;">Chờ chủ phòng tiếp tục...</p>
+    <!-- Bảng xếp hạng -->
+    <div id="scoreboard-overlay" class="scoreboard-content" style="display: none;">
+        <h2>Bảng xếp hạng</h2>
+        <ul id="scoreboard-list"></ul>
 
-    <!-- Nút Kết thúc -->
-<button id="end-btn" class="btn btn-danger mt-3" style="display: none;">Kết thúc</button>
+        <!-- Nút tiếp theo cho host -->
+        <button id="next-question-btn" style="margin-top: 20px; display: none;" class="btn btn-success">Tiếp tục</button>
 
-<!-- Nút Chơi lại -->
-<button id="play-again-btn" class="btn btn-success mt-3" style="display: none;">Chơi lại</button>
+        <!-- Text cho người chơi khác -->
+        <p id="waiting-host-text" style="margin-top: 20px; display: none;">Chờ chủ phòng tiếp tục...</p>
+
+        <!-- Nút Kết thúc -->
+        <button id="end-btn" class="btn btn-danger mt-3" style="display: none;">Kết thúc</button>
+
+        <!-- Nút Chơi lại -->
+        <button id="play-again-btn" class="btn btn-success mt-3" style="display: none;">Chơi lại</button>
+    </div>
+
 </div>
+
 
 
 </div>
