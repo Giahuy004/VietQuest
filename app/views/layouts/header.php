@@ -88,5 +88,3 @@ footer {
             </div>
         </nav>
     </header>
-
-    <div class="container">

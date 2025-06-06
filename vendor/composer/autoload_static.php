@@ -4,7 +4,7 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInit3ffbe28fb745b145fa2fcd19500ebf5e
+class ComposerStaticInit95ff2482a62a0a3f71045c68c1e0a55b
 {
     public static $files = array (
         'ad155f8f1cf0d418fe49e248db8c661b' => __DIR__ . '/..' . '/react/promise/src/functions_include.php',
@@ -44,6 +44,8 @@ class ComposerStaticInit3ffbe28fb745b145fa2fcd19500ebf5e
         array (
             'Psr\\Log\\' => 8,
             'Psr\\Http\\Message\\' => 17,
+            'Phrity\\Util\\' => 12,
+            'Phrity\\Net\\' => 11,
         ),
         'G' => 
         array (
@@ -129,6 +131,14 @@ class ComposerStaticInit3ffbe28fb745b145fa2fcd19500ebf5e
             0 => __DIR__ . '/..' . '/psr/http-factory/src',
             1 => __DIR__ . '/..' . '/psr/http-message/src',
         ),
+        'Phrity\\Util\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/phrity/util-errorhandler/src',
+        ),
+        'Phrity\\Net\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/phrity/net-uri/src',
+        ),
         'GuzzleHttp\\Psr7\\' => 
         array (
             0 => __DIR__ . '/..' . '/guzzlehttp/psr7/src',
@@ -171,10 +181,10 @@ class ComposerStaticInit3ffbe28fb745b145fa2fcd19500ebf5e
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInit3ffbe28fb745b145fa2fcd19500ebf5e::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInit3ffbe28fb745b145fa2fcd19500ebf5e::$prefixDirsPsr4;
-            $loader->prefixesPsr0 = ComposerStaticInit3ffbe28fb745b145fa2fcd19500ebf5e::$prefixesPsr0;
-            $loader->classMap = ComposerStaticInit3ffbe28fb745b145fa2fcd19500ebf5e::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInit95ff2482a62a0a3f71045c68c1e0a55b::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInit95ff2482a62a0a3f71045c68c1e0a55b::$prefixDirsPsr4;
+            $loader->prefixesPsr0 = ComposerStaticInit95ff2482a62a0a3f71045c68c1e0a55b::$prefixesPsr0;
+            $loader->classMap = ComposerStaticInit95ff2482a62a0a3f71045c68c1e0a55b::$classMap;
 
         }, null, ClassLoader::class);
     }

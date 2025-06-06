@@ -183,89 +183,179 @@ function calculateRealDistance(latlng1, latlng2) {
   const distance = R * c;
   return distance.toFixed(1);
 }
+// function showResult(onFinishCallback) {
+//   // Lấy dữ liệu câu hỏi hiện tại
+//   const question = questions[currentQuestionIndex];
+//   if (!question) {
+//       console.warn("No question found for currentQuestionIndex:", currentQuestionIndex);
+//       if (typeof onFinishCallback === 'function') {
+//           onFinishCallback();
+//       }
+//       return;
+//   }
+
+//   // Tọa độ đích
+//   const targetLatLng = [question.correct_lat, question.correct_lng];
+//   const destinationIcon = L.icon({
+//     iconUrl: '/VietQuest/public/images/marker/destination.png',
+//     iconSize: [40, 40],      // tùy chỉnh kích thước icon (VD: 40x40 px)
+//     iconAnchor: [20, 40],    // điểm neo (trung tâm đáy)
+//     popupAnchor: [0, -40]    // vị trí popup hiển thị
+//   });
+
+//   // Thêm marker đích
+//   const targetMarker = L.marker(targetLatLng, { icon: destinationIcon }).addTo(map);
+
+//   // Tọa độ người chơi chọn
+//   const userLatLng = currentMarker?.getLatLng?.() ?? targetLatLng;
+
+//   // Tính khoảng cách
+//   const realDistance = calculateRealDistance(userLatLng, targetMarker.getLatLng());
+
+//   // Xóa polyline cũ nếu có
+//   if (typeof polyline !== 'undefined' && polyline) {
+//       map.removeLayer(polyline);
+//   }
+
+//   // Vẽ line từ user → target
+//   polyline = L.polyline([userLatLng, targetMarker.getLatLng()], {
+//       color: 'black',
+//       weight: 4,
+//       opacity: 1,
+//       dashArray: '10,15'
+//   }).addTo(map);
+//   polyline.bindPopup(realDistance + " km").openPopup();
+
+//   // Zoom đến đích
+//   map.flyTo(targetLatLng, 17, { duration: 2 });
+
+//   // Khi zoom xong → gọi callback
+//   map.once('moveend', function () {
+//       if (typeof onFinishCallback === 'function') {
+//           onFinishCallback();
+//       }
+//   });
+// }
+
 function showResult(onFinishCallback) {
-  // Lấy dữ liệu câu hỏi hiện tại
-  const question = questions[currentQuestionIndex];
-  if (!question) {
-      console.warn("No question found for currentQuestionIndex:", currentQuestionIndex);
-      if (typeof onFinishCallback === 'function') {
-          onFinishCallback();
-      }
-      return;
-  }
+    // Lấy dữ liệu câu hỏi hiện tại
+    const question = questions[currentQuestionIndex];
+    if (!question) {
+        console.warn("No question found for currentQuestionIndex:", currentQuestionIndex);
+        if (typeof onFinishCallback === 'function') {
+            onFinishCallback();
+        }
+        return;
+    }
 
-  // Tọa độ đích
-  const targetLatLng = [question.correct_lat, question.correct_lng];
-  const destinationIcon = L.icon({
-    iconUrl: '/VietQuest/public/images/marker/target.png',
-    iconSize: [40, 40],      // tùy chỉnh kích thước icon (VD: 40x40 px)
-    iconAnchor: [20, 40],    // điểm neo (trung tâm đáy)
-    popupAnchor: [0, -40]    // vị trí popup hiển thị
-  });
+    // Tọa độ đích
+    TARGET_LATLNG = [question.correct_lat, question.correct_lng];
+    const destinationIcon = L.icon({
+        iconUrl: '/VietQuest/public/images/marker/destination.png',
+        iconSize: [40, 40],       // tùy chỉnh kích thước icon (VD: 40x40 px)
+        iconAnchor: [20, 40],     // điểm neo (trung tâm đáy)
+        popupAnchor: [0, -40]     // vị trí popup hiển thị
+    });
 
-  // Thêm marker đích
-  const targetMarker = L.marker(targetLatLng, { icon: destinationIcon }).addTo(map);
+    // Đảm bảo xóa marker đích cũ nếu có trước khi tạo mới
+    if (targetMarker) {
+        map.removeLayer(targetMarker);
+        targetMarker = null; // Xóa tham chiếu
+    }
+    // Thêm marker đích và GÁN VÀO BIẾN TOÀN CỤC targetMarker
+    targetMarker = L.marker(TARGET_LATLNG, { icon: destinationIcon }).addTo(map);
 
-  // Tọa độ người chơi chọn
-  const userLatLng = currentMarker?.getLatLng?.() ?? targetLatLng;
+    // Tọa độ người chơi chọn (sử dụng biến toàn cục currentMarker)
+    const userLatLng = currentMarker?.getLatLng?.() ?? TARGET_LATLNG;
 
-  // Tính khoảng cách
-  const realDistance = calculateRealDistance(userLatLng, targetMarker.getLatLng());
+    // Tính khoảng cách
+    const realDistance = calculateRealDistance(userLatLng, targetMarker.getLatLng());
 
-  // Xóa polyline cũ nếu có
-  if (typeof polyline !== 'undefined' && polyline) {
-      map.removeLayer(polyline);
-  }
+    // Vẽ line từ user → target và GÁN VÀO BIẾN TOÀN CỤC currentPolyline
+    currentPolyline = L.polyline([userLatLng, TARGET_LATLNG], { // Sử dụng targetLatLng trực tiếp
+        color: 'black',
+        weight: 4,
+        opacity: 1,
+        dashArray: '10,15'
+    }).addTo(map);
+    currentPolyline.bindPopup(realDistance + " km").openPopup();
 
-  // Vẽ line từ user → target
-  polyline = L.polyline([userLatLng, targetMarker.getLatLng()], {
-      color: 'black',
-      weight: 4,
-      opacity: 1,
-      dashArray: '10,15'
-  }).addTo(map);
-  polyline.bindPopup(realDistance + " km").openPopup();
+    // Zoom đến đích
+    map.flyTo(TARGET_LATLNG, 17, { duration: 2 });
 
-  // Zoom đến đích
-  map.flyTo(targetLatLng, 17, { duration: 2 });
-
-  // Khi zoom xong → gọi callback
-  map.once('moveend', function () {
-      if (typeof onFinishCallback === 'function') {
-          onFinishCallback();
-      }
-  });
+    // Khi zoom xong → gọi callback
+    map.once('moveend', function () {
+        if (typeof onFinishCallback === 'function') {
+            onFinishCallback();
+        }
+    });
 }
+
+// 
 
 function showDescription(descriptionText, onFinishCallback) {
-  const overlayLayer = document.getElementById('overlay-layer');
-  const descOverlay = document.getElementById('description-overlay');
-  const scoreboardOverlay = document.getElementById('scoreboard-overlay');
+    const overlayLayer = document.getElementById('overlay-layer');
+    const descOverlay = document.getElementById('description-overlay');
+    const scoreboardOverlay = document.getElementById('scoreboard-overlay');
+    const descTextElement = document.getElementById('desc-text'); // Lấy tham chiếu đến phần tử desc-text
 
-  // Reset state
-  overlayLayer.style.display = 'flex';
-  descOverlay.style.display = 'block';
-  scoreboardOverlay.style.display = 'none';
+    // Reset trạng thái hiển thị của các overlay
+    overlayLayer.style.display = 'flex';
+    descOverlay.style.display = 'block';
+    scoreboardOverlay.style.display = 'none';
 
-  document.getElementById('desc-text').textContent = descriptionText;
+    // Xóa nội dung cũ để chuẩn bị cho hiệu ứng gõ chữ
+    descTextElement.textContent = '';
 
-  // Sau vài giây tự động chuyển sang BXH (VD: 4 giây)
-  setTimeout(() => {
-      if (typeof onFinishCallback === 'function') {
-          onFinishCallback();
-      }
-  }, 4000);
+    let i = 0;
+    const typingSpeed = 50; // Tốc độ gõ chữ (milliseconds mỗi ký tự)
+
+    // Hàm để thực hiện hiệu ứng gõ chữ
+    function typeWriter() {
+        if (i < descriptionText.length) {
+            // Thêm từng ký tự vào phần tử
+            descTextElement.textContent += descriptionText.charAt(i);
+            i++;
+            // Gọi lại hàm sau một khoảng thời gian ngắn
+            setTimeout(typeWriter, typingSpeed);
+        } else {
+            // Khi tất cả các ký tự đã được gõ xong, bắt đầu đếm ngược 5 giây
+            setTimeout(() => {
+                if (typeof onFinishCallback === 'function') {
+                    onFinishCallback();
+                }
+            }, 5000); // 5000ms = 5 giây
+        }
+    }
+
+    // Bắt đầu hiệu ứng gõ chữ
+    typeWriter();
 }
 
+
+// function showScoreboard() {
+//     const overlayLayer = document.getElementById('overlay-layer');
+//     const descOverlay = document.getElementById('description-overlay');
+//     const scoreboardOverlay = document.getElementById('scoreboard-overlay');
+
+//     overlayLayer.style.display = 'flex';
+//     descOverlay.style.display = 'none';
+//     scoreboardOverlay.style.display = 'block';
+// }
 
 function showScoreboard() {
     const overlayLayer = document.getElementById('overlay-layer');
     const descOverlay = document.getElementById('description-overlay');
     const scoreboardOverlay = document.getElementById('scoreboard-overlay');
 
-    overlayLayer.style.display = 'flex';
+    // Đảm bảo lớp overlay chung hiển thị để chứa các phần tử con
+    overlayLayer.style.display = 'flex'; 
+    
+    // Ẩn mô tả địa điểm
     descOverlay.style.display = 'none';
-    scoreboardOverlay.style.display = 'block';
+    
+    // Quan trọng: Đặt scoreboardOverlay thành 'flex' để căn giữa nội dung của nó
+    scoreboardOverlay.style.display = 'flex'; 
 }
 
 nextBtn.onclick = function () {
